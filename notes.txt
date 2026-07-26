@@ -1,0 +1,12 @@
+runApp() takes a widget and makes it the root of the widget tree.
+
+ForgeApp is a StatelessWidget — it has no mutable state.
+
+MaterialApp provides the basic Material design infrastructure.
+
+Scaffold gives you a standard screen layout (AppBar, body, FAB, etc.).
+
+AppBar shows a title at the top.
+
+===
+

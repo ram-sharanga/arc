@@ -44,34 +44,72 @@ class _ArcHomeState extends State<ArcHome> {
     ),
   ];
 
+  // getters
+  int get _completedCount => _sessions.where((t) => t.completed).length;
+  int get _totalCount => _sessions.length;
+  double get fractionValue =>
+      _totalCount > 0 ? _completedCount / _totalCount : 0.0;
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Arc')),
-      body: ListView.builder(
-        itemCount: _sessions.length,
-        itemBuilder: (context, index) {
-          final session = _sessions[index];
-          return ListTile(
-            leading: Checkbox(
-              value: session.completed,
-              onChanged: (_) {
-                setState(() {
-                  session.completed = !session.completed;
-                });
+      body: Column(
+        children: [
+          const SizedBox(height: 24),
+          SizedBox(
+            width: 140,
+            height: 140,
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                CircularProgressIndicator(
+                  value: fractionValue,
+                  strokeWidth: 10,
+                  color: Colors.green,
+                  backgroundColor: Colors.grey.shade300,
+                ),
+                Text(
+                  '$_completedCount/$_totalCount',
+                  style: const TextStyle(
+                    fontSize: 32,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 24),
+          Expanded(
+            child: ListView.builder(
+              itemCount: _sessions.length,
+              itemBuilder: (context, index) {
+                final session = _sessions[index];
+                return ListTile(
+                  leading: Checkbox(
+                    value: session.completed,
+                    onChanged: (_) {
+                      setState(() {
+                        session.completed = !session.completed;
+                      });
+                    },
+                  ),
+                  title: Text(
+                    session.title,
+                    style: session.completed
+                        ? const TextStyle(
+                            decoration: TextDecoration.lineThrough,
+                          )
+                        : null,
+                  ),
+                  subtitle: Text(
+                    '${session.start.format(context)} – ${session.end.format(context)}',
+                  ),
+                );
               },
             ),
-            title: Text(
-              session.title,
-              style: session.completed
-                  ? const TextStyle(decoration: TextDecoration.lineThrough)
-                  : null,
-            ),
-            subtitle: Text(
-              '${session.start.format(context)} – ${session.end.format(context)}',
-            ),
-          );
-        },
+          ),
+        ],
       ),
     );
   }

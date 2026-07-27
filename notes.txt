@@ -10,3 +10,103 @@ AppBar shows a title at the top.
 
 ===
 
+//getters main.dart
+
+---
+
+## The evaluation timeline of a Dart object
+
+Imagine you write:
+
+```dart
+class _ForgeHomeState extends State<ForgeHome> {
+  final List<Session> _sessions = [
+    Session(title: 'Morning run', start: TimeOfDay(hour: 6, minute: 0), end: TimeOfDay(hour: 7, minute: 0)),
+  ];
+
+  final int sessionCount = _sessions.length;  // ❌ ERROR
+
+  int get sessionCountGetter => _sessions.length;  // ✅ WORKS
+}
+```
+
+Here’s what Dart does **in order** when you create `_ForgeHomeState()`:
+
+### Phase 1 – Field Initializers run (top to bottom)
+1. Dart sees `_sessions = [...]` and creates the list. Now `_sessions` exists in memory.
+2. Dart sees `sessionCount = _sessions.length` and **immediately** tries to evaluate it.
+
+**But here’s the catch:** During Phase 1, Dart treats the object as still being *constructed*. It doesn’t allow references to `this` (the current instance) because the object isn’t fully "born" yet. Even though `_sessions` technically exists, Dart enforces a strict rule: **no instance member access in field initializers**. Why? To prevent bugs where you accidentally read a field that hasn’t been initialized yet (imagine if `sessionCount` was declared *above* `_sessions` — it would read `null` or crash).
+
+So `_sessions.length` fails because `_sessions` is an instance member, and you're accessing it during initialization.
+
+### Phase 2 – Constructor body runs
+If you had a constructor, its body would execute here. By now, all field initializers have finished, so `this` is safe to use.
+
+### Phase 3 – Object is fully constructed
+Now you can call methods on it, access properties, etc.
+
+---
+
+## Where getters fit in
+
+A getter is **not** evaluated during Phase 1. It’s just a function that pretends to be a property. It runs **only when you call it**, which is always after Phase 3 (the object is fully constructed).
+
+So:
+```dart
+int get sessionCountGetter => _sessions.length;
+```
+Dart reads this during Phase 1 and says: *"Okay, I'll store a reference to this function, but I won't run it yet."* When you later use `sessionCountGetter` in your `build` method, the object is already alive, `_sessions` is initialized, and everything works.
+
+---
+
+## Field initializer (FI) vs Getter — when to use which
+
+| Field Initializer                         | Getter                                      |
+|-------------------------------------------|---------------------------------------------|
+| Evaluated **once** at object creation     | Evaluated **every time** you access it      |
+| Stores the result in memory               | Computes the result on the fly              |
+| Cannot access other instance members      | Can access any instance member              |
+| Good for **fixed values** or things that don’t change | Good for **derived/computed** values that depend on mutable state |
+
+### Use a field initializer when:
+- The value is constant: `final createdAt = DateTime.now();`
+- The value doesn’t depend on other instance fields.
+- You want to store the result and reuse it without recalculating.
+
+### Use a getter when:
+- The value **depends on mutable state** (like `_sessions` changing).
+- You want it to be recalculated every time the state changes.
+- You want a clean interface (`session.completionStatus`) without exposing a method.
+
+---
+
+## Why doesn’t Dart just allow field initializers to access instance members?
+
+Some languages (like Java) do allow it, but with a risky rule: fields are initialized in declaration order. If you read a field declared *below*, you get `null` or a default value, leading to subtle bugs.
+
+Dart chose safety: **prevent all instance access during initialization** so you never accidentally read an uninitialized field. Getters bypass this because they defer execution to a time when the object is guaranteed to be ready.
+
+---
+
+## Your `fractionValue` getter
+
+```dart
+double get fractionValue => _totalCount > 0 ? _completedCount / _totalCount : 0.0;
+```
+
+This is a **getter**, not a field initializer, because:
+- It depends on `_totalCount` and `_completedCount`, which are instance members (themselves getters that read `_sessions`).
+- It needs to recalculate every time `_sessions` changes.
+- You want the UI to always see the latest value.
+
+A field initializer would compute the fraction once and freeze it forever — wrong for your use case.
+
+---
+
+## Summary
+
+- **Field initializers** = set once, evaluated at object creation, cannot reference siblings.
+- **Getters** = computed on demand, evaluated whenever accessed, can reference anything.
+
+===

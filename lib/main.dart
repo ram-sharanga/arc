@@ -53,7 +53,20 @@ class _ArcHomeState extends State<ArcHome> {
         itemBuilder: (context, index) {
           final session = _sessions[index];
           return ListTile(
-            title: Text(session.title),
+            leading: Checkbox(
+              value: session.completed,
+              onChanged: (_) {
+                setState(() {
+                  session.completed = !session.completed;
+                });
+              },
+            ),
+            title: Text(
+              session.title,
+              style: session.completed
+                  ? const TextStyle(decoration: TextDecoration.lineThrough)
+                  : null,
+            ),
             subtitle: Text(
               '${session.start.format(context)} – ${session.end.format(context)}',
             ),

@@ -1,15 +1,15 @@
-enum SessionStatus { live, settled, missed }
+import 'package:flutter/material.dart';
 
 class Session {
-  final int number;
   final String title;
-  final String time;
-  final SessionStatus status;
+  final TimeOfDay start;
+  final TimeOfDay end;
+  bool completed;
 
   Session({
-    required this.number,
     required this.title,
-    required this.time,
-    required this.status,
+    required this.start,
+    required this.end,
+    this.completed = false,
   });
 }
